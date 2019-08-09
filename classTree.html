@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="../resources/css/ext-all.css" rel="stylesheet">
+    <script src="../adapter/ext/ext-base.js"></script>
+    <script src="../ext-all.js"></script>
+    <script type="text/javascript">
+        Ext.onReady(function () {
+            var data = [
+            ];
+
+            var store = new Ext.data.SimpleStore({
+                fields: ["value", "text"],
+                data: data
+            });
+            var menu = new Ext.menu.Menu({
+                items: [
+                    {
+                        id: 'addStudent',
+                        text: 'addStudent'
+                    },
+                    {
+                        id: 'delete',
+                        text: 'delete'
+                    }
+                ],
+                listeners: {
+                    itemclick: function (item) {
+                        switch (item.id) {
+                            case 'delete':
+                                var currentNode = item.parentMenu.contextNode;
+                                if (currentNode.parentNode) {
+                                    currentNode.remove();
+                                }
+                                break;
+                            case 'addStudent':
+                                var currentNode = item.parentMenu.contextNode;
+                                var childNodes = root.childNodes.filter(i=>i===currentNode);
+                                console.log(childNodes)
+                                if(childNodes.length!==0) {
+                                    //TODO新增学生
+                                    Ext.MessageBox.prompt("提示", "请输入学生的姓名", function (btn, value) {
+                                        if (value !== "") {
+
+                                            var node = new Ext.tree.TreeNode({text: value});
+                                            currentNode.appendChild(node);
+                                        }
+                                    }, this, false, "");
+                                }else{
+                                    Ext.Msg.alert('提醒','学生不能添加学生哦！')
+                                }
+                                break;
+                        }
+                    }
+                }
+            });
+            var win;
+            var root = new Ext.tree.TreeNode({
+                id : 'root',
+                text: 'root'
+
+            });
+
+            // var node = new Ext.tree.TreeNode({text:'node'});
+            // root.appendChild(node);
+            var treePanel = new Ext.tree.TreePanel({
+                renderTo: document.body,
+                title: '班级管理系统',
+                root: root,
+                rootVisible: false,
+                enableDD: true,
+                lines: false,
+                contextMenu: menu,
+                listeners: {
+                    contextmenu: function (node, e) {
+                        node.select();
+                        var treeContextMenu = node.getOwnerTree().contextMenu;
+                        treeContextMenu.contextNode = node;
+                        treeContextMenu.showAt(e.getXY());
+                    },
+                    beforemovenode: function (tree, node, oldParent, newParent, index) {
+                        if(root.childNodes.filter(i=>i===oldParent).length!==0){
+                            return true
+                        }
+                        return false
+                    }
+                },
+                buttons: [
+                    {
+                        text: 'add class',
+                        listeners: {
+                            click: function () {
+                                //TODO添加班级文件夹
+                                Ext.MessageBox.prompt("提示", "请输入班级名称", function (btn, value) {
+                                    if (value !== "") {
+                                        var node1 = new Ext.tree.TreeNode({text: value,expandable: true});
+                                        console.log(node1.text);
+                                        root.appendChild(node1);
+                                    }
+                                }, this, false, "");
+
+                            }
+                        }
+                    },
+                    {
+                        text: 'add student',
+                        listeners: {
+                            click: function () {
+                                //TODO添加班级文件夹
+                                data.splice(0,data.length);
+                                //var item = [root.childNodes[0].text, root.childNodes[0].text];
+
+                                root.childNodes.forEach(i=>data.push([i.text, i.text]));
+                                store.loadData(data);
+                                // create the window on the first click and reuse on subsequent clicks
+                                if (!win) {
+                                    win = new Ext.Window({
+                                        applyTo: 'hello',
+                                        title: '新增学生',
+                                        layout: 'fit',
+                                        width: 200,
+                                        height: 150,
+                                        closeAction: 'hide',
+                                        plain: true,
+
+                                        items: new Ext.Panel({
+                                            applyTo: 'hello-tabs',
+
+                                            items: [
+                                                {
+                                                    id: 'class',
+                                                    xtype:'combo',
+                                                    coLabel: '班级：',
+                                                    renderTo: Ext.getBody(),
+                                                    store: store,
+                                                    mode: "local",
+                                                    displayField: "text",
+                                                    valueField: "value",
+                                                    triggerAction: "all",
+                                                    emptyText: "请选择班级",
+                                                    value: "请选择班级"
+                                                },
+                                                {
+                                                    id:'student',
+                                                    xtype:'textfield',
+                                                    emptyText: '输入学生姓名'
+                                                }
+                                            ]
+                                        }),
+
+                                        buttons: [{
+                                            text: 'Submit',
+                                            handler: function () {
+                                                Ext.Msg.alert('提醒','success');
+                                                var childnode = root.childNodes.filter(i=>i.text===Ext.getCmp('class').getValue());
+                                                childnode[0].appendChild(new Ext.tree.TreeNode({text: Ext.getCmp('student').getValue(),leaf:true}));
+
+                                                win.hide();
+                                            }
+                                        }, {
+                                            text: 'Close',
+                                            handler: function () {
+                                                win.hide();
+                                            }
+                                        }]
+                                    });
+                                }
+                                win.show(this);
+
+
+                            }
+                        }
+                    }
+                ]
+            });
+            var treeEditor = new Ext.tree.TreeEditor(treePanel,{allowBlank: false},{
+                listeners:{
+                    complete: function(editor, currVal,origVal){
+                        Ext.Msg.alert('Tree Editor','node text changed from'+origVal+'to'+currVal);
+                    }
+                }
+            })
+        });
+    </script>
+</head>
+<body>
+<div id="tree-div"></div>
+<div id="hello"></div>
+<div id="hello-tabs"></div>
+</body>
+</html>
